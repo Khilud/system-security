@@ -1,4 +1,5 @@
-function doSomethingWithUserId(user_id) 
+
+function doSomethingWithUserId(admin_id) 
 {
     $('#insertLogButton').click(() => {
         let room_id = $('#roomId').val();
@@ -10,9 +11,9 @@ function doSomethingWithUserId(user_id)
                 type: 'GET',
                 url: "http://localhost/Hotel_app/DBUtils.php", 
                 data: {
-                    action: 'insertReservetion',
+                    action: 'insertAdminReservation',
                     room_id: room_id,
-                    user_id: user_id,
+                    admin_id: admin_id,
                     start_date: start_date,
                     end_date: end_date,  
                 },
@@ -35,17 +36,20 @@ function doSomethingWithUserId(user_id)
 
 $(document).ready(() => 
 {
-    $.ajax({
+   $.ajax({
         type: 'GET',
         url: 'http://localhost/Hotel_app/DBUtils.php',
-        data: { action: 'selectIdByUsername', username: username },
+        data: { action: 'selectAdminByUsername', username: 'admin1' },
         success: function(result) 
         {
-          var response = JSON.parse(result);
-          var user_id = parseInt(response[0].id, 10);
-          console.log(user_id);
-          doSomethingWithUserId(user_id);
+            let response = JSON.parse(result);
+             //If the admin table has e.g. an `id` column:
+            let admin_id = response[0].id;
+        console.log("Admin ID:", admin_id);
+            doSomethingWithUserId(admin_id);
         }
-      });
+     });
 
 })
+
+ 

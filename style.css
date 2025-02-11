@@ -1,37 +1,124 @@
-
-html, body {
-    height: 100%;
+/* General Body Style */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9; /* Light grayish-white background */
+    color: #2e3a3f; /* Dark gray for text */
     margin: 0;
-    display: flex;
-    flex-direction: column;
+    padding: 0;
 }
 
-
-.content {
-    flex: 1;
-}
-
-
-.footer {
-    background-color: #343a40;
-    color: rgb(26, 54, 54);
+/* Header Section */
+.header {
+    background-color: #2e8b7d; /* Teal-green */
+    color: #ffffff; /* White */
+    padding: 10px 0;
     text-align: center;
-    padding: 10px;
-    position: relative;
-    width: 100%;
-    padding: 1rem 0;
-    margin-top: auto;
+    font-size: 1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #f4c542; /* Gold underline */
 }
 
-/* Keep existing styles */
-#index-page, #login-form, #addFormDiv, #removeFormDiv, #viewLogsDiv {
+.header a {
+    color: #ffffff; /* White */
+    margin: 0 10px;
+    text-decoration: none;
+    font-weight: normal;
+}
+
+.header a:hover {
+    color: #f4c542; /* Gold */
+}
+
+/* Navbar */
+.navbar {
+    background-color: #2e8b7d; /* Teal-green */
+}
+
+.navbar .navbar-brand {
+    color: #ffffff; /* White */
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.navbar .nav-link {
+    color: #ffffff; /* White */
+    font-size: 1rem;
+    text-transform: uppercase;
+}
+
+.navbar .nav-link:hover {
+    color: #f4c542; /* Gold */
+}
+
+/* Hero Section */
+.hero {
+    background: url('img/messina1.jpg') no-repeat center center/cover;
+    height: 70vh;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    color: #ffffff; /* White */
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
 }
 
-.peni {
-    justify-content: center;
-    align-items: center;
-    color: rgb(26, 54, 54);
+.hero .btn {
+    background-color: #f4c542; /* Gold */
+    color: #2e3a3f; /* Dark gray */
+    border: none;
+    font-size: 1.2rem;
+    padding: 10px 20px;
+    margin-top: 20px;
+    text-transform: uppercase;
+}
+
+.hero .btn:hover {
+    background-color: #2e3a3f; /* Dark gray */
+    color: #f4c542; /* Gold */
+}
+
+/* Featured Hotels Section */
+.featured-hotels h2 {
+    color: #2e8b7d; /* Teal-green */
+    font-weight: bold;
+    text-align: center;
+}
+
+.featured-hotels .card {
+    background-color: #ffffff; /* White */
+    border: 1px solid #dcdcdc;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.featured-hotels .card-title {
+    color: #2e3a3f; /* Dark gray */
+    font-weight: bold;
+}
+
+.featured-hotels .btn-primary {
+    background-color: #2e8b7d; /* Teal-green */
+    border: none;
+    color: #ffffff; /* White */
+}
+
+.featured-hotels .btn-primary:hover {
+    background-color: #f4c542; /* Gold */
+    color: #2e3a3f; /* Dark gray */
+}
+
+/* Footer */
+.footer {
+    background-color: #2e8b7d; /* Teal-green */
+    color: #ffffff; /* White */
+    padding: 20px 0;
+    text-align: center;
+}
+
+.footer a {
+    color: #f4c542; /* Gold */
+}
+
+.footer a:hover {
+    color: #ffffff; /* White */
 }

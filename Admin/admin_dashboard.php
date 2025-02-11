@@ -26,82 +26,134 @@ if (isset($_POST['logoutButton'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f7f7f7, #e9ecef); /* Subtle gradient */
+            color: #333;
+            padding: 20px;
         }
-        .btn-custom {
-            margin: 5px;
-            width: 100%;
+        .container {
+            max-width: 1200px;
+            margin: auto;
         }
-        .dashboard-card {
-            margin: 20px 0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
         }
-        .btn-custom:hover {
-            background-color: #0056b3;
-            color: white;
+        .dashboard-header h3 {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .dashboard-header p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
         }
         .card-header {
             background-color: #343a40;
             color: white;
             font-size: 1.2rem;
+            text-align: center;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .btn-custom {
+            margin: 10px 0;
+            padding: 10px 20px;
+            width: 100%;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border: none;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .logout-section {
+            margin-top: 40px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
-<div class="container py-5">
+<div class="container">
 
     <!-- Welcome Section -->
-    <div class="text-center">
-        <h3>Welcome, <?php echo $admin_username; ?>!</h3>
-        <p class="lead">Manage hotels, rooms, and reservations from the dashboard.</p>
+    <div class="dashboard-header">
+        <h3>Welcome, <?= htmlspecialchars($admin_username); ?>!</h3>
+        <p>Manage hotels, rooms, and reservations with ease.</p>
     </div>
 
     <!-- Dashboard Cards -->
-    <div class="row row-cols-1 row-cols-md-3">
+    <div class="row g-4">
         
         <!-- Hotels Card -->
-        <div class="col mb-4">
-            <div class="card dashboard-card">
-                <div class="card-header text-center">Hotels</div>
-                <div class="card-body">
+        <div class="col-lg-4 col-md-6">
+            <div class="card">
+                <div class="card-header">Hotels</div>
+                <div class="card-body text-center">
                     <h5 class="card-title">Manage Hotels</h5>
                     <p class="card-text">Add, view, or edit hotel listings.</p>
                     <button class="btn btn-primary btn-custom" onclick="location.href='add_hotel.php'">Add Hotel</button>
-                    <button class="btn btn-secondary btn-custom" onclick="location.href='listHotels.php'">View Hotels</button>
+                    <button class="btn btn-secondary btn-custom" onclick="location.href='adminlistHotels.php'">View Hotels</button>
                 </div>
             </div>
         </div>
 
         <!-- Rooms Card -->
-        <div class="col mb-4">
-            <div class="card dashboard-card">
-                <div class="card-header text-center">Rooms</div>
-                <div class="card-body">
+        <div class="col-lg-4 col-md-6">
+            <div class="card">
+                <div class="card-header">Rooms</div>
+                <div class="card-body text-center">
                     <h5 class="card-title">Manage Rooms</h5>
                     <p class="card-text">Add, view, or edit room listings for your hotels.</p>
                     <button class="btn btn-primary btn-custom" onclick="location.href='add_room.php'">Add Room</button>
-                    <button class="btn btn-secondary btn-custom" onclick="location.href='list_rooms.php'">View Rooms</button>
+                    <button class="btn btn-secondary btn-custom" onclick="location.href='adminlist_rooms.php'">View Rooms</button>
                 </div>
             </div>
         </div>
 
         <!-- Reservations Card -->
-        <div class="col mb-4">
-            <div class="card dashboard-card">
-                <div class="card-header text-center">Reservations</div>
-                <div class="card-body">
+        <div class="col-lg-4 col-md-6">
+            <div class="card">
+                <div class="card-header">Reservations</div>
+                <div class="card-body text-center">
                     <h5 class="card-title">Manage Reservations</h5>
                     <p class="card-text">Add, edit, or remove reservations.</p>
-                    <button class="btn btn-warning btn-custom" onclick="location.href='reservations.php'">Add Reservation</button>
-                    <button class="btn btn-warning btn-custom" onclick="location.href='editreservation.php'">Edit Reservation</button>
-                
+                    <button class="btn btn-primary btn-custom" onclick="location.href='reservations.php'">View Reservations</button>
+                    <button class="btn btn-secondary btn-custom" onclick="location.href='editreservation.php'">Edit Reservations</button>
+                </div>
             </div>
         </div>
+
     </div>
 
     <!-- Logout Section -->
-    <div class="text-center">
+    <div class="logout-section">
         <form method="post">
             <button type="submit" class="btn btn-danger" name="logoutButton">Log Out</button>
         </form>

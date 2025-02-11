@@ -31,7 +31,7 @@ const insertData = (newBody, data) => {
     }
 }
 
-function doSomethingWithUserId(user_id) 
+function doSomethingWithUserId(admin_id) 
 {
 
     let body = $('.reservationtable tbody').eq(0);
@@ -40,7 +40,7 @@ function doSomethingWithUserId(user_id)
         type: 'GET',
         url: "http://localhost/Hotel_app/DBUtils.php",
         data: {action: 'getReservationByUserId',
-        user_id: user_id},
+        admin_id: admin_id},
         success: (data) => {
             insertData(newBody, data);
         }
@@ -54,13 +54,13 @@ $(document).ready(() =>
     $.ajax({
         type: 'GET',
         url: 'http://localhost/Hotel_app/DBUtils.php',
-        data: { action: 'selectIdByUsername', username: username },
+        data: { action: 'selectIdByUsername', username: 'admin' },
         success: function(result) 
         {
           var response = JSON.parse(result);
-          var user_id = parseInt(response[0].id, 10);
-          console.log(user_id);
-          doSomethingWithUserId(user_id);
+          var admin_id = parseInt(response[0].id, 10);
+          console.log(admin_id);
+          doSomethingWithUserId(admin_id);
         }
       });
 

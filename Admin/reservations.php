@@ -6,147 +6,195 @@ if (!isset($_SESSION['admin_username'])) {
     header('Location: ../login.php');
     die();
 }
+require_once '../DBUtils.php'; // Adjust the path as needed
+$db = new DBConnection();
+$reservations = $db->getAllReservations();
 
 
+// Fetch all reservations from the database
+ // Assuming you have a method like this in your DBUtils.php
 if (isset($_POST['returnButton'])) {
     header('Location: admin_dashboard.php'); 
 }
-
 if (isset($_POST['postButton'])) {
     header('Location: add_reservation.php');
+    exit; // Always include exit after a header redirect
 }
 
-if (isset($_POST['EDITRES'])) {
-    header('Location: editreservation.php');
-}
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
-        <link rel="stylesheet" href="../style.css">
-        <title>Admin Reservations</title> 
-    </head>
-    <body>
-        <br>
-        <div class="container text-center" id="viewReservationsDiv">
-            <div class="container" id="showReservations">
-                <h3>All Reservations (Admin)</h3>
-                <table class="reservationtable table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Room Number</th>
-                            <th>Hotel Name</th>  
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </div>
-            <div id="buttons" class="container text-center">
-                <button type="button" id="previousButton" class="btn btn-primary mb-1">Previous</button>
-                <button id="nextButton" type="button" class="btn btn-primary mb-1">Next</button>
-                
-                <br><br>
-                <div id="ADDRES" class="mb-1">
-                    <form method="post">
-                        <input id="postButton" type="submit" class="btn btn-primary mb-1" name="postButton" value="Add Reservation">
-                    </form>
-                </div>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Reservations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-                <br>
-                <div id="EDITRES" class="mb-1">
-                    <form id="editForm" method="post" action="editreservation.php">
-                        <label for="editInput" class="form-label">ID: </label>
-                        <input type="text" id="editInput" name="id" class="form-control mb-3">
-                        <button id="editReservation" type="submit" class="btn btn-primary mb-3">Edit Reservation</button>
-                    </form>
-                </div>
+        .container {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            color: #333;
+        }
 
-                <br>
-                <div id="DELETERES" class="mb-1">
-                    <form id="deleteForm" method="post"> 
-                        <label for="deleteInput" class="form-label">ID: </label>
-                        <input type="text" id="deleteInput" class="form-control mb-3">
-                        <button id="deleteReservation" type="submit" class="btn btn-danger mb-3">Delete Reservation</button>
-                    </form>
-                </div>
+        h3 {
+            font-size: 2rem;
+            color: #1e3c72;
+            margin-bottom: 20px;
+            text-align: center;
+        }
 
-                <br>
-                <form method="post">
-                    <input id="returnButton" type="submit" class="btn btn-primary mb-1" name="returnButton" value="Return to Admin Page">
-                </form>
-            </div>
-        </div> 
-        
-        <!-- Add Datepicker Inputs -->
-        <div id="reservationDates" class="mb-3">
-                    <form method="post">
-                        <label for="startDate" class="form-label">Start Date: </label>
-                        <input type="text" id="startDate" class="form-control mb-3" placeholder="Select Start Date">
-                        
-                        <label for="endDate" class="form-label">End Date: </label>
-                        <input type="text" id="endDate" class="form-control mb-3" placeholder="Select End Date">
-                    </form>
-                </div>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-                <br>
-                <form method="post">
-                    <input id="returnButton" type="submit" class="btn btn-primary mb-1" name="returnButton" value="Return to Admin Page">
-                </form>
-            </div>
-        </div>  
+        th {
+            background-color: #1e3c72;
+            color: #ffffff;
+        }
 
-        </script>
-    </body>
-</html>
-    </body>
+        .btn {
+            margin: 10px 5px;
+        }
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="reservations.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Handle row click for editing
-            $('.reservationtable').on('click', 'tbody tr', function() {
-                var id = $(this).find('td:first-child').text(); 
-                $('#editInput').val(id);
-                $('#deleteInput').val(id);
-                
-                $('#editForm').submit(function(e) {
-                    e.preventDefault();
-                    var id = $('#editInput').val();
-                    window.location.href = 'editreservation.php?id=' + id;
-                });
+        .form-label {
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background-color: #1e3c72;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #142850;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        #reservationDates {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h3>All Reservations (Admin)</h3>
+    <div id="showReservations">
+        <table class="reservationtable table table-hover text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Room Number</th>
+                    <th>Hotel Name</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                </tr>
+            </thead>
+            <tbody>
+    <?php if (!empty($reservations)): ?>
+        <?php foreach ($reservations as $reservation): ?>
+            <tr>
+                <td><?= htmlspecialchars($reservation['id']); ?></td>
+                <td><?= htmlspecialchars($reservation['room_number']); ?></td>
+                <td><?= htmlspecialchars($reservation['hotel_name']); ?></td>
+                <td><?= htmlspecialchars($reservation['start_date']); ?></td>
+                <td><?= htmlspecialchars($reservation['end_date']); ?></td>
+            </tr>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <tr>
+            <td colspan="5" class="text-center">No reservations found.</td>
+        </tr>
+    <?php endif; ?>
+</tbody>
+
+        </table>
+    </div>
+
+    <!-- Buttons -->
+    <div id="buttons" class="text-center">
+    <form method="post" >
+    <button type="submit" id="postButton" class="btn btn-primary mb-3" name="postButton">Add Reservation</button>
+</form>
+
+        <form id="editForm" method="post">
+            <label for="editInput" class="form-label">Reservation ID:</label>
+            <input type="text" id="editInput" name="id" class="form-control mb-3">
+            <button id="editReservation" type="submit" class="btn btn-primary mb-3">Edit Reservation</button>
+        </form>
+        <form id="deleteForm" method="post">
+            <label for="deleteInput" class="form-label">Reservation ID:</label>
+            <input type="text" id="deleteInput" class="form-control mb-3">
+            <button id="deleteReservation" type="submit" class="btn btn-danger mb-3">Delete Reservation</button>
+        </form>
+        <form method="post">
+            <button type="submit" id="returnButton" class="btn btn-primary mb-3" name="returnButton">Return to Admin Page</button>
+        </form>
+    </div>
+
+    <!-- Reservation Dates -->
+    
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Handle row click for editing
+        $('.reservationtable').on('click', 'tbody tr', function () {
+            var id = $(this).find('td:first').text();
+            $('#editInput').val(id);
+            $('#deleteInput').val(id);
+        });
+
+        // Handle delete
+        $('#deleteForm').submit(function (e) {
+            e.preventDefault();
+            var id = $('#deleteInput').val();
+
+            $.ajax({
+                type: 'GET',
+                url: "http://localhost/Hotel_app/DBUtils.php",
+                data: { action: 'deleteReservation', id: id },
+                success: function (data) {
+                    let res = JSON.parse(data);
+                    if (res === 0) {
+                        alert("Reservation could not be deleted!");
+                    } else {
+                        $('.form-control').val("");
+                        alert("Deleted successfully!");
+                        location.reload();
+                    }
+                }
             });
-
-            // Handle delete
-            $('#deleteForm').submit(function(e) {
-                e.preventDefault();
-                var id = $('#deleteInput').val();
-
-                $.ajax({
-                    type: 'GET',
-                    url: "http://localhost/Hotel_app/DBUtils.php",
-                    data:{ action: 'deleteReservation',
-                        id: id },
-                    success: function(data) {
-                        let res = JSON.parse(data);
-                        if (res === 0) {
-                            alert("Reservation could not be deleted!");
-                        } else {
-                            $('.form-control').val("");
-                            alert("Deleted successfully!");
-                        }
-                    }       
-               });
-           });
-        })
-    </script>
+        });
+    });
+</script>
+</body>
 </html>

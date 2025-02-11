@@ -59,7 +59,7 @@ if (isset($_POST['indexPage'])) {
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, rgb(84, 153, 199), rgb(46, 64, 83));
+            background: linear-gradient(135deg, #2c3e50, #bdc3c7);
             color: #fff;
             height: 100vh;
             display: flex;

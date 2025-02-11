@@ -71,7 +71,7 @@ if (isset($_POST['viewAllButton'])) {
         }
 
         .btn-primary {
-            background-color: #004d73;
+            background-color: #007bff;
             border: none;
             padding: 10px;
             font-size: 1rem;
@@ -83,7 +83,7 @@ if (isset($_POST['viewAllButton'])) {
         }
 
         .btn-secondary {
-            background-color: #00796b;
+            background-color:rgb(4, 124, 179);
             border: none;
             padding: 10px;
             font-size: 1rem;
@@ -91,7 +91,7 @@ if (isset($_POST['viewAllButton'])) {
         }
 
         .btn-secondary:hover {
-            background-color: #004d40;
+            background-color:rgb(6, 101, 168);
         }
 
         .alert {

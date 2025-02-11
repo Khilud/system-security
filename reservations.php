@@ -35,16 +35,16 @@ if (isset($_POST['postButton'])) {
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, rgb(209, 216, 203), rgb(63, 70, 74));
+            background: rgba(255, 255, 255, 0.95);
             color: #fff;
             padding: 20px;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(223, 239, 244, 0.9);
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 10px rgba(198, 193, 193, 0.2);
             color: #333;
         }
 

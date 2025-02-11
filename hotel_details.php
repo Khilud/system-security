@@ -36,7 +36,7 @@ $rooms = $db->getRoomsByHotelId($hotelId);
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: url('your-background-image.jpg') no-repeat center center fixed;
+            background-color: rgba(255, 255, 255, 0.9);
             background-size: cover;
             color: #fff;
             padding: 20px;

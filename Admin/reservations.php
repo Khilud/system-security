@@ -34,7 +34,7 @@ if (isset($_POST['postButton'])) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            background: linear-gradient(135deg, #f0f9ff, #c4e0e5);
             color: #fff;
             font-family: 'Arial', sans-serif;
             min-height: 100vh;
@@ -46,7 +46,7 @@ if (isset($_POST['postButton'])) {
         }
 
         .container {
-            background: #ffffff;
+            background:rgb(243, 250, 255);
             border-radius: 10px;
             box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
             padding: 30px;

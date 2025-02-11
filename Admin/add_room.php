@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hotel_id']) && isset(
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #f3f4f6, #dbeafe); /* Light gradient background */
+            background: linear-gradient(135deg, #f0f9ff, #c4e0e5);
             min-height: 100vh;
             display: flex;
             align-items: center;

@@ -32,7 +32,7 @@ $rooms = $db->getAllRooms(); // Assumes `getAllRooms()` function exists in DBUti
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <style>
     body {
-        background: linear-gradient(135deg, rgba(0, 51, 102, 0.7), rgba(0, 76, 153, 0.8)); /* Dark Blue gradient */
+        background: linear-gradient(135deg, #f0f9ff, #c4e0e5);;
         font-family: 'Arial', sans-serif;
         min-height: 100vh;
         margin: 0;
@@ -64,16 +64,16 @@ $rooms = $db->getAllRooms(); // Assumes `getAllRooms()` function exists in DBUti
     }
 
     .table-striped > tbody > tr:nth-of-type(odd) {
-        background-color: #e6f0ff; /* Light Blue */
+        background-color: #e6f0ff; 
     }
 
     th {
-        background-color: #003366; /* Navy Blue */
+        background-color: #003366; 
         color: #ffffff;
     }
 
     .btn-primary {
-        background-color: #003366; /* Navy Blue */
+        background-color: #007bff; 
         border: none;
         width: 100%;
         padding: 10px;
@@ -82,7 +82,7 @@ $rooms = $db->getAllRooms(); // Assumes `getAllRooms()` function exists in DBUti
     }
 
     .btn-primary:hover {
-        background-color: #00509e; /* Slightly Lighter Blue */
+        background-color: #00509e; 
     }
 
     .btn {
@@ -91,7 +91,7 @@ $rooms = $db->getAllRooms(); // Assumes `getAllRooms()` function exists in DBUti
 
     .form-label {
         font-weight: bold;
-        color: #003366; /* Navy Blue */
+        color: #003366; 
     }
 
     .form-control {

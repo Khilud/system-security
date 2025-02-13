@@ -19,7 +19,7 @@ if (isset($_POST['returnButton'])) {
 $db = new DBConnection(); // Database connection
 
 // Fetch all rooms from the database
-$rooms = $db->getAllRooms(); // Assumes `getAllRooms()` function exists in DBUtils.php
+$rooms = $db->getAllRooms();
 ?>
 
 <!DOCTYPE html>
@@ -149,7 +149,10 @@ $rooms = $db->getAllRooms(); // Assumes `getAllRooms()` function exists in DBUti
             </tbody>
         </table>
     </div>
-  
+    <div id="paginationButtons" class="mt-4 text-center">
+        <button id="previousButton" type="button" class="btn btn-primary" disabled>Previous</button>
+        <button id="nextButton" type="button" class="btn btn-primary" disabled>Next</button>
+        </div>
     <div id="filterByCategory" class="mt-4">
         <label for="categoryInputFilter" class="form-label">Category:</label>
         <input type="text" id="categoryInputFilter" class="form-control mb-3" placeholder="Enter room category">

@@ -90,7 +90,7 @@ $hotels = $db->getAllHotels();
                     <li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>
                     <li class="nav-item"><a class="nav-link" href="signup.php">Sign Up</a></li>
                     <li class="nav-item"><a class="nav-link" href="Admin/admin_login.php">Admin Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="home.php">View Hotels</a></li>
+                
                 </ul>
             </div>
         </div>

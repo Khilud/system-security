@@ -85,7 +85,12 @@ class DBConnection
         $stmt = $this->pdo->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
         return $stmt->execute([$username, $email, $password]);
     }
-
+ // Fetch user by username
+ public function selectUserByUsername($username) {
+    $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
     // Fetch hotel by name
     public function getHotelByName($hotel) {
         if (empty($hotel)) {
@@ -115,13 +120,31 @@ class DBConnection
 
     // Fetch all rooms with hotel details
     public function getAllRooms() {
-        $stmt = $this->pdo->prepare("SELECT rooms.id, hotels.name AS hotel_name, rooms.room_number, rooms.category, rooms.price
+        $stmt = $this->pdo->prepare("SELECT rooms.id, rooms.hotel_id, hotels.name AS hotel_name, rooms.room_number, rooms.category, rooms.price
                                      FROM rooms
                                      INNER JOIN hotels ON rooms.hotel_id = hotels.id");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getRoomByCategory($category) {
+        $stmt = $this->pdo->prepare("
+            SELECT rooms.id, rooms.hotel_id, hotels.name AS hotel_name, rooms.room_number, rooms.category, rooms.price
+            FROM rooms
+            INNER JOIN hotels ON rooms.hotel_id = hotels.id
+            WHERE rooms.category = ?
+        ");
+        $stmt->execute([$category]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    
+    public function getRoomByPrice($price) {
+        $stmt = $this->pdo->prepare("SELECT * FROM rooms WHERE price <= ?");
+        $stmt->execute([$price]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
     // Insert a new hotel
     public function insertHotel($name, $address) {
         try {
@@ -145,6 +168,15 @@ class DBConnection
         $stmt->execute([$roomType]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    
+
+    public function selectUserIdForReservation($username) {
+        $stmt = $this->pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['id'] ?? null;
+    }
+    
 
     public function insertAdminReservation($admin_id, $room_id, $start_date, $end_date) {
         try {
@@ -159,11 +191,11 @@ class DBConnection
         }
     }
     
-    public function insertUserReservation($user_id, $room_id, $start_date, $end_date) {
+    public function insertReservetion($user_id, $room_id, $start_date, $end_date) {
         try {
             $stmt = $this->pdo->prepare("
-                INSERT INTO reservations (adminid, roomid, startdate, enddate)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO reservations (admin_id , user_id, room_id, start_date, end_date)
+                VALUES (NULL,?, ?, ?, ?)
             ");
             return $stmt->execute([$user_id, $room_id, $start_date, $end_date]);
         } catch (PDOException $e) {
@@ -187,6 +219,26 @@ class DBConnection
         } catch (PDOException $e) {
             error_log("Error fetching reservations: " . $e->getMessage());
             return [];
+        }
+    }
+    public function isRoomAvailable($room_id, $start_date, $end_date) {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) AS count
+                FROM reservations
+                WHERE room_id = ?
+                AND (
+                    (start_date <= ? AND end_date >= ?) OR
+                    (start_date <= ? AND end_date >= ?) OR
+                    (start_date >= ? AND end_date <= ?)
+                )
+            ");
+            $stmt->execute([$room_id, $start_date, $start_date, $end_date, $end_date, $start_date, $end_date]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result['count'] == 0; // Return true if no conflicts
+        } catch (PDOException $e) {
+            error_log("Error checking room availability: " . $e->getMessage());
+            return false;
         }
     }
     
@@ -230,12 +282,7 @@ class DBConnection
         return $stmt->execute([$id]);
     }
 
-    // Fetch user by username
-    public function selectUserByUsername($username) {
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
-        $stmt->execute([$username]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+    
 
     // Fetch admin by username
     public function selectAdminByUsername($username) {
@@ -316,14 +363,18 @@ class DBConnection
                         $this->show($result ? 1 : 0);
                         exit;
                     
-                    case 'insertUserReservation':
+                    case 'insertReservetion':
                         $user_id    = $_GET['user_id']    ?? '';
                         $room_id    = $_GET['room_id']    ?? '';
                         $start_date = $_GET['start_date'] ?? '';
                         $end_date   = $_GET['end_date']   ?? '';
                     
-                        $result = $this->insertUserReservation($user_id, $room_id, $start_date, $end_date);
-                        $this->show($result ? 1 : 0);
+                        if ($this->isRoomAvailable($room_id, $start_date, $end_date)) {
+                            $result = $this->insertReservetion($user_id, $room_id, $start_date, $end_date);
+                            $this->show($result ? 1 : 0); // Return 1 for success, 0 for failure
+                        } else {
+                            $this->show('unavailable'); // Return 'unavailable' if room is already reserved
+                        }
                         exit;
                     
                         case 'selectAdminByUsername':
@@ -355,9 +406,37 @@ class DBConnection
                                 // Return JSON: 1 if success, 0 if failure
                                 $this->show($result ? 1 : 0);
                                 exit;
-                            
+
+                                case 'selectIdForReservation':
+                                    $username = $_GET['username'];
+                                    $result = $this->selectUserIdForReservation($username);
+                                    if ($result) {
+                                        echo json_encode(['id' => $result]); // Wrap the ID in a JSON object
+                                    } else {
+                                        echo json_encode(['error' => 'User not found']); // Handle cases where the user is not found
+                                    }
+                                    break;
+                                
+                                
+                            case 'getRoomByCategory':
+                                    $category = $_GET['category'] ?? '';
+                                    $result = $this->getRoomByCategory($category);
+                                    $this->show($result);
+                                    break;
+                        
+                            case 'getRoomByPrice':
+                                    $price = $_GET['price'] ?? 0;
+                                    $result = $this->getRoomByPrice($price);
+                                    $this->show($result);
+                                    break;
+                        
+                            case 'getAllRooms':
+                                    $result = $this->getAllRooms();
+                                    $this->show($result);
+                                    break;
+                        
                           
-// --------------------------------------------case 'selectIdByUsername':
+
     $username = $_GET['username'] ?? '';
     if (empty($username)) {
         // Return empty array if username is missing

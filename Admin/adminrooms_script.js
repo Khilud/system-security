@@ -1,42 +1,37 @@
 let currentPage = 0;
 let showType = 'all';
 
-const insertData = (newBody, data) => 
-{
+const insertData = (newBody, data) => {
+    // Disable previous button on the first page
     if (currentPage === 0) {
         $('#previousButton').attr('disabled', true);
     }
-    let result = JSON.parse(data);
-    let numberOfPages = Math.ceil(result.length/4);
-    for (let log of result) {
+
+    let result = JSON.parse(data); // Parse data
+    let numberOfPages = Math.ceil(result.length / 4); // Calculate total pages
+
+    // Add rows to the table
+    for (let i = currentPage * 4; i < Math.min(result.length, (currentPage + 1) * 4); i++) {
+        let log = result[i];
         let newRow = newBody.insertRow();
-        if (result.indexOf(log) >= 4 * currentPage) {
-            for (let index of ['id', 'hotel_name', 'room_number', 'category', 'price']) 
-            {
-                let newCol = newRow.insertCell();
-                let newText = document.createTextNode(log[index]);
-                newCol.appendChild(newText);
-            }
-            newBody.append(newRow);
-        }
-        if (result.indexOf(log) >= 4 * currentPage + 3) {
-            break;
+        for (let key of ['id', 'hotel_id', 'room_number', 'category', 'price']) {
+            let newCol = newRow.insertCell();
+            newCol.textContent = log[key];
         }
     }
-    if (numberOfPages === 0) {
+
+    // Disable/enable next button based on the current page
+    if (currentPage >= numberOfPages - 1) {
         $('#nextButton').attr('disabled', true);
     } else {
-        if (currentPage === numberOfPages - 1) {
-            $('#nextButton').attr('disabled', true);
-        } else {
-            $('#nextButton').attr('disabled', false);
-        }
+        $('#nextButton').attr('disabled', false);
     }
-}
+};
+
 
 const showAllRooms = () => 
 {
-    let body = $('.roomtable tbody').eq(0);
+    let body = $('.table tbody').eq(0);
     let newBody = document.createElement('tbody');
     $.ajax({
         type: 'GET',
@@ -52,102 +47,83 @@ const showAllRooms = () =>
 
 const showRoomByCategory = (category) => 
 {
-    let body = $('.roomtable tbody').eq(0);
+    
+    console.log("Category:", category);
+    let body = $('.table tbody').eq(0);
     let newBody = document.createElement('tbody');
     $.ajax({
         type: 'GET',
         url: "http://localhost/Hotel_app/DBUtils.php",
         data: {action: 'getRoomByCategory', category: category},
         success: (data) => {
-            $('.form-control').val("");
+            console.log("category filter Data:", data);
+            currentPage = 0; // Reset page
             insertData(newBody, data);
+        },
+        error: (xhr, status, error) => {
+            console.error("AJAX Error: ", status, error);
+            alert("Failed to fetch hotels by name. Please try again.");
         }
-    })
+    });
     body.replaceWith(newBody);
-}
+};
 
-const showRoomlByPrice = (price) => 
-{
-    let body = $('.roomtable tbody').eq(0);
+const showRoomByPrice = (price) => {
+    console.log("Price:", price);
+    let body = $('.table tbody').eq(0);
     let newBody = document.createElement('tbody');
     $.ajax({
         type: 'GET',
         url: "http://localhost/Hotel_app/DBUtils.php",
-        data: {action: 'getRoomByPrice', price: price},
+        data: { action: 'getRoomByPrice', price },
         success: (data) => {
-            $('.form-control').val("");
+            console.log("Price Filter Data:", data);
+            currentPage = 0; // Reset page
             insertData(newBody, data);
+        },
+        error: (xhr, status, error) => {
+            console.error("AJAX Error: ", status, error);
         }
-    })
+    });
     body.replaceWith(newBody);
-}
-
-const showCorrectHotels = () => {
-    switch (showType) {
-        case 'all':
-            showAllRooms();
-            break;
-
-        case 'category':
-            category = $('#categoryInputFilter').val().trim();
-            if (category.length > 0)
-                showRoomByCategory(category);
-            else 
-            {
-                showType = 'all';
-            }
-            break;
-
-        case 'price':
-            price = $('#priceInputFilter').val().trim();
-            if (price.length > 0)
-                showRoomlByPrice(price);
-            else {
-                showType = 'all';  
-            }
-            break;
-    }
-}
+};
 
 $(document).ready(() => {
+    // Show all rooms on page load
     showAllRooms();
 
-    $('#allLogsButton').click(() => 
-    {
-        currentPage = 0;
-        showType = 'all';
-        showCorrectHotels();
-    })
+// Filter by category
+$('#filterByCategoryButton').click(() => {
+    const category = $('#categoryInputFilter').val().trim();
+    console.log("Filter by Category clicked:", category); 
+    if (category.length === 0) {
+        alert('Please enter a category!');
+        return;
+    }
+    showRoomByCategory(category);
+});
 
-    $('#filterByCategory').click(() => 
-    {
-        currentPage = 0;
-        showType = 'category';
-        showCorrectHotels();
-    })
+// Filter by price
+$('#filterByPriceButton').click(() => {
+    const price = $('#priceInputFilter').val().trim();
+    if (isNaN(price) || price <= 0) {
+        alert('Please enter a valid price!');
+        return;
+    }
+    showRoomByPrice(price);
+});
 
-    $('#filterByPrice').click(() => 
-    {
-        currentPage = 0;
-        showType = 'price';
-        showCorrectHotels();
-    })
+// Pagination: Previous
+$('#previousButton').click(() => {
+    if (currentPage > 0) {
+        currentPage--;
+        showAllRooms(); // Re-fetch the correct data
+    }
+});
 
-    $('#previousButton').click(() => 
-    {
-        if (currentPage > 0) {
-            currentPage--;
-            if (currentPage === 0) {
-                $('#previousButton').attr('disabled', true);
-            }
-        }
-        showCorrectHotels();
-    })
-
-    $('#nextButton').click(() => 
-    {
-        $('#previousButton').attr('disabled', false);
-        currentPage++;
-        showCorrectHotels();
-    })
-})
+// Pagination: Next
+$('#nextButton').click(() => {
+    currentPage++;
+    showAllRooms(); // Re-fetch the correct data
+});
+});

@@ -15,41 +15,6 @@ if (!isset($_SESSION['username'])) {
 // Instantiate the DB connection
 $db = new DBConnection();
 
-// (Optional) You can fetch reservations if needed for display.
-// $reservations = $db->getAllReservations();
-
-$message = null;
-
-// Process the form submission for adding a reservation
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addReservationButton'])) {
-    // Get the form values
-    $roomId = $_POST['roomId'];
-    $startDate = $_POST['startDate'];
-    $endDate = $_POST['endDate'];
-    
-    // Assuming the admin's ID is stored in the session as user_id (adjust if necessary)
-    $adminId = $_SESSION['user_id'] ?? null;
-    
-    // Validate form inputs
-    if (!empty($roomId) && !empty($startDate) && !empty($endDate) && $adminId !== null) {
-        // Check that the start date is earlier than the end date
-        if (strtotime($startDate) >= strtotime($endDate)) {
-            $message = '<div class="alert alert-danger">Start date must be earlier than the end date.</div>';
-        } else {
-            // Attempt to insert the reservation
-            // This should call the function that inserts into reservations (with columns adminid, roomid, startdate, enddate)
-            $result = $db->insertAdminReservation($adminId, $roomId, $startDate, $endDate);
-            if ($result) {
-                $message = '<div class="alert alert-success">Reservation added successfully.</div>';
-            } else {
-                $message = '<div class="alert alert-danger">Failed to add reservation. Please try again.</div>';
-            }
-        }
-    } else {
-        $message = '<div class="alert alert-danger">All fields are required.</div>';
-    }
-}
-
 // Handle navigation buttons
 if (isset($_POST['returnButton'])) {
     header('Location: home.php');
@@ -118,22 +83,25 @@ if (isset($_POST['viewAllButton'])) {
 <div class="container text-center">
     <h2>Welcome to our hotel</h2>
     <div id="addFormDiv">
-        <?php if (isset($message)) echo $message; ?>
         <h5>Add a Reservation</h5>
-        <form method="post">
+        <form>
             <div class="mb-3">
                 <label for="roomId" class="form-label">Room ID:</label>
-                <input type="text" name="roomId" id="roomId" class="form-control" placeholder="Enter Room ID">
+                <input type="text" id="roomId" class="form-control" placeholder="Enter Room ID">
             </div>
             <div class="mb-3">
                 <label for="startDate" class="form-label">Start Date:</label>
-                <input type="date" name="startDate" id="startDate" class="form-control">
+                <input type="date" id="startDate" class="form-control">
             </div>
             <div class="mb-3">
                 <label for="endDate" class="form-label">End Date:</label>
-                <input type="date" name="endDate" id="endDate" class="form-control">
+                <input type="date" id="endDate" class="form-control">
             </div>
-            <button type="submit" name="addReservationButton" class="btn btn-primary mb-3">Add Reservation</button>
+            <button type="button" id="insertLogButton" class="btn btn-primary mb-3">Add Reservation</button>
+<script>
+    const username = <?= json_encode($_SESSION['username']) ?>;
+</script>
+
         </form>
         <form method="post" class="d-flex justify-content-between">
             <button type="submit" class="btn btn-secondary" name="viewAllButton">View All Reservations</button>
@@ -143,5 +111,7 @@ if (isset($_POST['viewAllButton'])) {
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<script src="add_script_reservations.js"></script>
+
 </body>
 </html>

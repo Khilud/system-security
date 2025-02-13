@@ -14,7 +14,7 @@ if (isset($_GET['action']) && ($_GET['action'] == 'reserve' || $_GET['action'] =
     }
 }
 
-// Log out functionality
+// Log out
 if (isset($_POST['logoutButton'])) {
     session_unset();
     session_destroy();
@@ -31,7 +31,7 @@ if (isset($_POST['logoutButton'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        /* General Body and Layout */
+        
         html, body {
             height: 100%;
             margin: 0;
@@ -57,9 +57,9 @@ if (isset($_POST['logoutButton'])) {
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
-        /* Header Styling */
+        
         header {
-            background-color: #1c3c47; /* Dark Teal */
+            background-color: #1c3c47; 
             color: #ffffff; /* White */
             padding: 20px 0;
             text-align: center;
@@ -74,7 +74,7 @@ if (isset($_POST['logoutButton'])) {
             color: #f4c542; /* Gold */
         }
 
-        /* Buttons */
+       
         .btn-outline-primary {
             border-color: #1c3c47; /* Dark Teal */
             color: #1c3c47; /* Dark Teal */
@@ -88,13 +88,13 @@ if (isset($_POST['logoutButton'])) {
         }
 
         .btn-outline-primary:hover {
-            background-color: #2e8b7d; /* Dark Teal */
-            color: #ffffff; /* White */
+            background-color: #2e8b7d; 
+            color: #ffffff; 
         }
 
         .btn-danger {
-            background-color: #f4c542; /* Gold */
-            color: #ffffff; /* White */
+            background-color: #f4c542; 
+            color: #ffffff; 
             border: none;
             font-weight: bold;
             font-size: 1rem;
@@ -106,13 +106,13 @@ if (isset($_POST['logoutButton'])) {
         }
 
         .btn-danger:hover {
-            background-color: #2e8b7d; /* Darker Gold */
+            background-color: #2e8b7d; 
         }
 
         /* Footer Styling */
         footer {
-            background-color: #1c3c47; /* Dark Teal */
-            color: #ffffff; /* White */
+            background-color: #1c3c47; 
+            color: #ffffff;
             text-align: center;
             padding: 15px 0;
             margin-top: 20px;
@@ -121,7 +121,7 @@ if (isset($_POST['logoutButton'])) {
         }
 
         footer a {
-            color: #f4c542; /* Gold */
+            color: #f4c542;
             text-decoration: none;
             font-weight: bold;
         }

@@ -90,7 +90,7 @@ if (isset($_POST['postButton'])) {
         <?php foreach ($reservations as $reservation): ?>
             <tr>
                 <td><?= htmlspecialchars($reservation['id']); ?></td>
-                <td><?= htmlspecialchars($reservation['room_id']); ?></td>
+                <td><?= htmlspecialchars($reservation['room_number']); ?></td>
                 <td><?= htmlspecialchars($reservation['start_date']); ?></td>
                 <td><?= htmlspecialchars($reservation['end_date']); ?></td>
             </tr>

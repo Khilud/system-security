@@ -9,16 +9,17 @@ if (isset($_SESSION['username'])) {
 function checkValidPassword(string $username, string $password): bool {
     $connection = new DBConnection();
     $result = $connection->selectUserByUsername($username);
-    if (count($result) == 0) {
+
+    if (count($result) === 0) {
+        // User not found
         return false;
     } else {
-        if ($result[0]["password"] === $password) {
-            return true;
-        } else {
-            return false;
-        }
+        // Verify the password using password_verify
+        $storedHash = $result[0]["password"]; // Retrieve the hashed password from the database
+        return password_verify($password, $storedHash);
     }
 }
+
 
 if (isset($_POST['loginButton'])) {
     $errors = 0;

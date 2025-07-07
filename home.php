@@ -3,6 +3,10 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
+if (!isset($_SESSION['mfa_verified'])) {
+    header('Location: send_telegram_otp.php');
+    exit;
+}
 $username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
 $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'user'; // Default role is 'user'
 
@@ -37,6 +41,8 @@ if (isset($_POST['logoutButton'])) {
             margin: 0;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
             font-family: 'Arial', sans-serif;
             background: url('img/messina1.jpg') no-repeat center center fixed; /* Background Image */
             background-size: cover; /* Cover the entire screen */
@@ -65,6 +71,7 @@ if (isset($_POST['logoutButton'])) {
             text-align: center;
             font-size: 1.8rem;
             font-weight: bold;
+            width: 100vw;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 

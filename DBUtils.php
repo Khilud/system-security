@@ -14,6 +14,16 @@ class DBConnection
     private $pdo;
     private $error;
 
+    public function selectUserByEmail($email)
+    {
+    $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function getPDO()
+    {
+        return $this->pdo;
+    }
     public function __construct() 
     {
         $dsn = "mysql:host=127.0.0.1;port=3307;dbname=$this->db;charset=$this->charset";

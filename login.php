@@ -35,7 +35,7 @@ if (isset($_POST['loginButton'])) {
         $password = $_POST['password'];
         if (checkValidPassword($username, $password)) {
             $_SESSION['username'] = $username;
-            header("Location: home.php");
+            header("Location: send_telegram_otp.php");
         } else {
             $_SESSION['login-error'] = "Invalid username and/or password! Try again!";
         }

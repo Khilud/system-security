@@ -1,20 +1,27 @@
 <?php
 /**
- * Generate a secure random token 
+ * utils.php
+ * Secure utilities for Telegram MFA and OTP handling
+ */
+
+/**
+ * Generate a secure random token for Telegram linking
  */
 function generateConnectToken(): string {
     return bin2hex(random_bytes(16)); // 32 hex chars
 }
 
-
-   // secret key for OTP generation
- 
+/**
+ * Generate a secure secret key for OTP generation
+ */
 function generateSecretKey(): string {
     return bin2hex(random_bytes(32)); // 64 hex chars (256-bit)
 }
 
- //Generate a time-based OTP (TOTP) using the secret key
- 
+/**
+ * Generate a time-based OTP (TOTP) using the secret key
+ * Compatible with Google Authenticator
+ */
 function generateOTP(string $secretKey): string {
     // Convert hex key to binary
     $key = hex2bin($secretKey);
@@ -54,7 +61,7 @@ function verifyOTP(string $secretKey, string $userOTP): bool {
 }
 
 /**
- * Check if an account is locked 
+ * Check if an account is locked due to too many failed attempts
  */
 function isAccountLocked(array $user): bool {
     if (!isset($user['locked_until'])) {
@@ -66,8 +73,9 @@ function isAccountLocked(array $user): bool {
 }
 
 /**
- * Encrypt sensitive data
+ * Encrypt sensitive data before storing in DB
  */
+
 function encryptData(string $data, string $key): string {
     $iv = random_bytes(16);
     $encrypted = openssl_encrypt($data, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);

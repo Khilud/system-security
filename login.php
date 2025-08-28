@@ -1,6 +1,7 @@
 <?php
 header('Cache-Control: no-cache, must-revalidate');
 require_once 'DBUtils.php';
+require_once 'utils.php';
 session_start();
 if (isset($_SESSION['username'])) {
     unset($_SESSION['username']);
@@ -20,29 +21,88 @@ function checkValidPassword(string $username, string $password): bool {
     }
 }
 
+// rate limiting function
+function checkRateLimit($ip) {
+    $file = sys_get_temp_dir() . '/login_attempts.json';
+    $attempts = [];
+    
+    if (file_exists($file)) {
+        $attempts = json_decode(file_get_contents($file), true);
+    }
+    
+    // Clean old attempts
+    $attempts = array_filter($attempts, function($entry) {
+        return $entry['timestamp'] > time() - 600; // 10 minutes
+    });
+    
+    // Check attempts for this IP
+    $ip_attempts = array_filter($attempts, function($timestamp) use ($ip) {
+        return $timestamp['ip'] === $ip;
+    });
+    
+    if (count($ip_attempts) >= 5) {
+        return false; // Rate limit exceeded
+    }
+    
+    // Record new attempt
+    $attempts[] = ['ip' => $ip, 'timestamp' => time()];
+    file_put_contents($file, json_encode($attempts));
+    return true;
+}
 
 if (isset($_POST['loginButton'])) {
-    $errors = 0;
-    $fields = array("username", "password");
-    foreach ($fields as $key => $field) {
-        if (!isset($_POST[$field]) && empty($_POST[$field])) {
-            $errors++;
-        }
+    // Check rate limit
+    if (!checkRateLimit($_SERVER['REMOTE_ADDR'])) {
+        $_SESSION['login-error'] = "Too many login attempts. Please try again later.";
+        header('Location: login.php');
+        exit;
     }
 
-    if ($errors <= 0) {
-        $username = $_POST['username'];
-        $password = $_POST['password'];
+   $username = trim($_POST['username'] ?? '');
+    $password = trim($_POST['password'] ?? '');
+
+    if (empty($username) || empty($password)) {
+        $_SESSION['login-error'] = "Please fill in both username and password.";
+        header('Location: login.php');
+        exit;
+    }
+
+
+
         if (checkValidPassword($username, $password)) {
-            $_SESSION['username'] = $username;
-            header("Location: send_telegram_otp.php");
+            // Prevent session fixation
+        session_regenerate_id(true);
+
+         $_SESSION['username'] = $username;
+            // Check if user has linked Telegram
+            $db = new DBConnection();
+            $userArr = $db->selectUserByUsername($username);
+            $user = $userArr[0] ?? null;
+            
+            if (!$user['telegram_chat_id']) {
+                // Generate new connect token
+                $token = generateConnectToken();
+                $expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+                
+                
+                $db->updateConnectToken($username, $token, $expires);
+                
+                // Store token in session
+                $_SESSION['connect_token'] = $token;
+                
+                header('Location: link_telegram_instructions.php');
+                exit;
+            } else {
+                header('Location: send_telegram_otp.php');
+                exit;
+            }
         } else {
             $_SESSION['login-error'] = "Invalid username and/or password! Try again!";
+            header('Location: login.php');
+        exit;
         }
-    } else {
-        $_SESSION['login-error'] = "Invalid username and/or password! Try again!";
-    }
 }
+
 
 if (isset($_POST['indexPage'])) {
     header('Location: index.php');
@@ -140,9 +200,9 @@ if (isset($_POST['indexPage'])) {
         <h2>Login</h2>
 
         <?php if (isset($_SESSION['login-error'])): ?>
-            <div class="alert">
-                <p>Invalid username and/or password! Try again!</p>
-            </div>
+    <div class="alert">
+        <p><?= htmlspecialchars($_SESSION['login-error']) ?></p>
+    </div>
         <?php unset($_SESSION['login-error']); endif; ?>
 
         <form id="login-form" method="post" action="login.php">

@@ -335,7 +335,56 @@ class DBConnection
         }
     }
     
-    
+    // Add these new methods for Telegram/OTP functionality
+    public function updateConnectToken($username, $token, $expires) {
+        $stmt = $this->pdo->prepare("UPDATE users SET connect_token = ?, token_expires_at = ? WHERE username = ?");
+        return $stmt->execute([$token, $expires, $username]);
+    }
+
+    public function updateTelegramChatId($token, $chatId) {
+        $stmt = $this->pdo->prepare("UPDATE users SET telegram_chat_id = ?, connect_token = NULL, 
+            token_expires_at = NULL WHERE connect_token = ? AND token_expires_at > NOW()");
+        return $stmt->execute([$chatId, $token]);
+    }
+
+    public function getUserByConnectToken($token) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE connect_token = ? AND token_expires_at > NOW()");
+        $stmt->execute([$token]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function updateUserSecretKey($username, $secretKey) {
+        $stmt = $this->pdo->prepare("UPDATE users SET secret_key = ? WHERE username = ?");
+        return $stmt->execute([$secretKey, $username]);
+    }
+
+    public function updateLastLogin($username, $ip) {
+        $stmt = $this->pdo->prepare("UPDATE users SET last_login_ip = ?, last_login_at = NOW() 
+            WHERE username = ?");
+        return $stmt->execute([$ip, $username]);
+    }
+
+    public function incrementFailedAttempts($username) {
+        $stmt = $this->pdo->prepare("UPDATE users SET failed_attempts = COALESCE(failed_attempts, 0) + 1 WHERE username = ?");
+        return $stmt->execute([$username]);
+    }
+
+    public function getFailedAttempts($username) {
+        $stmt = $this->pdo->prepare("SELECT failed_attempts FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)($result['failed_attempts'] ?? 0);
+    }
+
+    public function lockAccount($username, $until) {
+        $stmt = $this->pdo->prepare("UPDATE users SET locked_until = ? WHERE username = ?");
+        return $stmt->execute([$until, $username]);
+    }
+
+    public function resetFailedAttempts($username) {
+        $stmt = $this->pdo->prepare("UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE username = ?");
+        return $stmt->execute([$username]);
+    }
 
     // Output data as JSON
     public function show($value) {

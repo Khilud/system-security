@@ -3,13 +3,30 @@
 file_put_contents('webhook.log', date('c')." ".file_get_contents("php://input")."\n", FILE_APPEND);
 
 
-require_once 'DBUtils.php'; 
+require_once 'DBUtils.php';
+require_once 'utils.php';
+
+// Enable error logging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Add logging
+function logWebhook($message) {
+    file_put_contents('webhook.log', date('Y-m-d H:i:s') . " - $message\n", FILE_APPEND);
+}
+
+// Bot configuration
+const BOT_TOKEN = '7619090164:AAGBSATpACMOaEUGGd7yG_DYbf0pB4ICvrA';
 
 // Get raw POST data sent by Telegram
 $content = file_get_contents("php://input");
 $update = json_decode($content, true);
 
+logWebhook("Received update: " . json_encode($update));
+
 if (!isset($update['message'])) {
+    logWebhook("No message received");
     exit("No message received");
 }
 
@@ -19,33 +36,35 @@ $chat_id = $message['chat']['id'];
 $text = trim($message['text']);
 
 if (strpos($text, "/connect ") === 0) {
-    $email = trim(substr($text, 9));
+    $token = trim(substr($text, 9));
+    logWebhook("Processing connect command with token: $token");
 
-    if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $db = new DBConnection();
+    $db = new DBConnection();
+    $user = $db->getUserByConnectToken($token);
 
-        // select user by email
-        $userArr = $db->selectUserByEmail($email); 
-        $user = $userArr[0] ?? null;
+    if ($user) {
+        try {
+            // Generate a new secret key for OTP
+            $secretKey = generateSecretKey();
+            
+            // Update user with Telegram chat_id and secret key
+            $db->updateTelegramChatId($token, $chat_id);
+            $db->updateUserSecretKey($user['username'], $secretKey);
 
-        if ($user) {
-            $pdo = $db->getPDO();
-            $update_stmt = $pdo->prepare("UPDATE users SET telegram_chat_id = ? WHERE email = ?");
-            $update_stmt->execute([$chat_id, $email]);
-
-            $bot_token = '7619090164:AAGBSATpACMOaEUGGd7yG_DYbf0pB4ICvrA';
-            $msg = "Telegram linked successfully! You can now log in with OTP.";
-            file_get_contents("https://api.telegram.org/bot$bot_token/sendMessage?chat_id=$chat_id&text=" . urlencode($msg));
-        } else {
-            $bot_token = '7619090164:AAGBSATpACMOaEUGGd7yG_DYbf0pB4ICvrA';
-            $msg = "No user found with that email. Please check and try again.";
-            file_get_contents("https://api.telegram.org/bot$bot_token/sendMessage?chat_id=$chat_id&text=" . urlencode($msg));
+            $msg = "✅ Telegram linked successfully! You can now log in with OTP.";
+            logWebhook("Successfully linked user {$user['username']} with chat_id $chat_id");
+        } catch (Exception $e) {
+            $msg = "❌ Error linking Telegram. Please try again.";
+            logWebhook("Error linking user: " . $e->getMessage());
         }
     } else {
-        $bot_token = '7619090164:AAGBSATpACMOaEUGGd7yG_DYbf0pB4ICvrA';
-        $msg = "❗ Please send a valid email. Example:\n/connect your_email@example.com";
-        file_get_contents("https://api.telegram.org/bot$bot_token/sendMessage?chat_id=$chat_id&text=" . urlencode($msg));
+        $msg = "❌ Invalid or expired token. Please try again.";
+        logWebhook("Invalid token attempt: $token");
     }
+
+    // Send response to user
+    $response = file_get_contents("https://api.telegram.org/bot" . BOT_TOKEN . "/sendMessage?chat_id=$chat_id&text=" . urlencode($msg));
+    logWebhook("Telegram API response: " . $response);
 }
 ?>
 

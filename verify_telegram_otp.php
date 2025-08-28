@@ -1,18 +1,55 @@
 <?php
 session_start();
+require_once 'DBUtils.php';
+require_once 'utils.php';
+
+// Redirect if not logged in
+if (!isset($_SESSION['username'])) {
+    header('Location: login.php');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $entered_otp = $_POST['otp'];
-    if (
-        isset($_SESSION['otp'], $_SESSION['otp_expiry']) &&
-        time() < $_SESSION['otp_expiry'] &&
-        $entered_otp == $_SESSION['otp']
-    ) {
-        $_SESSION['mfa_verified'] = true;
-        unset($_SESSION['otp'], $_SESSION['otp_expiry']);
-        header('Location: home.php');
-        exit;
-    } else {
-        $error = "Invalid or expired OTP.";
+    $db = new DBConnection();
+    $userArr = $db->selectUserByUsername($_SESSION['username']);
+    $user = $userArr[0] ?? null;
+
+    if (!$user || isAccountLocked($user)) {
+        $error = "❌ Account is locked. Please contact support.";
+    } 
+    elseif (!isset($user['secret_key'])) {
+        $error = "❌ Telegram not properly linked. Please set up MFA first.";
+    }
+    else {
+        $secretKey = $user['secret_key'];
+        $enteredOtp = $_POST['otp'];
+        
+        if (verifyOTP($secretKey, $enteredOtp)) {
+            // Reset failed attempts on success
+            $db->resetFailedAttempts($_SESSION['username']);
+            
+            // Update last successful login
+            $db->updateLastLogin($_SESSION['username'], $_SERVER['REMOTE_ADDR']);
+            
+            $_SESSION['mfa_verified'] = true;
+            unset($_SESSION['otp_expiry']);
+            
+            header('Location: home.php');
+            exit;
+        } else {
+            // Increment failed attempts
+            $db->incrementFailedAttempts($_SESSION['username']);
+            $failedAttempts = $db->getFailedAttempts($_SESSION['username']);
+            
+            if ($failedAttempts >= 5) {
+                // Lock account for 10 minutes (changed from 30)
+                $lockUntil = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+                $db->lockAccount($_SESSION['username'], $lockUntil);
+                $error = "❌ Too many failed attempts. Account locked for 10 minutes.";
+            } else {
+                $error = "❌ Invalid OTP. Attempts remaining: " . (5 - $failedAttempts);
+            }
+        }
     }
 }
 ?>
@@ -96,3 +133,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn btn-primary">Verify</button>
         </form>
     </div>
+</body>
+</html>

@@ -1,59 +1,9 @@
 <?php
-require_once 'DBUtils.php'; 
+require_once 'DBUtils.php';
+require_once 'utils.php'; // for generateConnectToken()
 session_start();
 
-// Include Composer's autoloader for PHPMailer
-require 'vendor/autoload.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
 $errors = [];
-
-function sendTelegramLinkMail(string $toEmail, string $toName): bool
-{
-    $mail = new PHPMailer(true);
-    try {
-        //Server settings
-        $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com';
-        $mail->SMTPAuth   = true;
-        $mail->Username   = 'hotelmessina0@gmail.com'; // Gmail address
-        $mail->Password   = 'xtjo umnn krnq izih';    // Gmail App Password
-        $mail->SMTPSecure = 'tls';
-        $mail->Port       = 587;
-
-        //Recipients
-        $mail->setFrom('hotelmessina@gmail.com', 'Hotel Booking');
-        $mail->addAddress($toEmail, $toName);
-
-        // Content
-        $mail->isHTML(false);
-        $mail->Subject = 'Complete Your Registration - Connect Your Telegram';
-        $bot_link = "https://t.me/KhiludAuthbot";
-        $mail->Body    = "
-Hi $toName,
-
-Thank you for registering at our Hotel Booking website!
-
-To enable secure login using Telegram OTP, please follow the steps below:
-
-1️  Click the link to open our Telegram bot:
-👉  $bot_link
-
-2️  In the Telegram chat, send this message:
-/connect $toEmail
-
-This will securely link your Telegram to your account. You'll receive OTP codes during login.
-
-Thanks!
-– The Hotel Booking Team
-"; $mail->send();
-        return true;
-    } catch (Exception $e) {
-        // Optionally log $mail->ErrorInfo
-        return false;
-    }
-}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
@@ -85,9 +35,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Insert user into database
                 $success = $db->insertUser($username, $email, $hashed_password);
                 if ($success) {
-                    sendTelegramLinkMail($email, $username); // Send Telegram link email
-                    $_SESSION['username'] = $username;
-                    header("Location: home.php"); // Redirect to home page after signup
+
+                    $secretKey = generateSecretKey(); // function from utils.php
+                    $db->updateUserSecretKey($username, $secretKey);
+                    // Generate connect token for Telegram linking
+                    $token = generateConnectToken();
+                    $expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+                    $db->updateConnectToken($username, $token, $expires);
+
+                    // Store token in session to display instructions
+                    $_SESSION['connect_token'] = $token;
+                    $_SESSION['new_user'] = $username;
+
+                    // Redirect to Telegram linking instructions page
+                    header("Location: link_telegram_instructions.php");
                     exit;
                 } else {
                     $errors[] = "Error inserting user.";

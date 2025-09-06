@@ -1,48 +1,49 @@
 <?php
-//ini_set('display_errors', 1);
-//ini_set('display_startup_errors', 1);
-//error_reporting(E_ALL);
 
-class DBConnection 
-{
-    private $host = '127.0.0.1';
-    private $db   = 'hotels';
-    private $user = 'root';
-    private $pass = '';
-    private $charset = 'utf8';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
+class DBConnection {
     private $pdo;
-    private $error;
 
-    public function selectUserByEmail($email)
-    {
-    $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-    public function getPDO()
-    {
-        return $this->pdo;
-    }
-    public function __construct() 
-    {
-        $dsn = "mysql:host=127.0.0.1;port=3307;dbname=$this->db;charset=$this->charset";
+    public function __construct() {
+        $host = getenv('DB_HOST') ?: 'db';
+        $db   = getenv('DB_NAME') ?: 'hotels';
+        $user = getenv('DB_USER') ?: 'root';
+        $pass = getenv('DB_PASS') ?: 'yourpassword';
 
-        $opt = [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false
-        ];
+        $dsn = "mysql:host={$host};dbname={$db};charset=utf8mb4";
 
         try {
-            $this->pdo = new PDO($dsn, $this->user, $this->pass, $opt);
+            $this->pdo = new PDO($dsn, $user, $pass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ]);
         } catch (PDOException $e) {
-            $this->error = $e->getMessage();
-            error_log("Error connecting to DB: " . $this->error);
-            throw new Exception("Database connection failed.");
+            // Debug info
+    error_log("❌ DB connection failed");
+    error_log("Host: $host");
+    error_log("DB: $db");
+    error_log("User: $user");
+    error_log("Pass: $pass");
+    throw new Exception("Database connection failed: " . $e->getMessage());
+
         }
     }
 
+    public function getPDO() {
+        return $this->pdo;
+    }
+
+    // YOUR OTHER METHODS
+
+    public function selectUserByEmail($email) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     // Fetch filtered hotels with pagination
     public function getFilteredHotels($nameFilter = '', $addressFilter = '', $start = 0, $perPage = 10) 
     {
@@ -96,11 +97,11 @@ class DBConnection
         return $stmt->execute([$username, $email, $password]);
     }
  // Fetch user by username
- public function selectUserByUsername($username) {
-    $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
-    $stmt->execute([$username]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+//public function selectUserByUsername($username) {
+   //$stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
+    //$stmt->execute([$username]);
+    //return $stmt->fetchAll(PDO::FETCH_ASSOC);
+//}
     // Fetch hotel by name
     public function getHotelByName($hotel) {
         if (empty($hotel)) {
@@ -163,7 +164,7 @@ class DBConnection
             $stmt->bindParam(':address', $address);
             return $stmt->execute();
         } catch (PDOException $e) {
-            throw new Exception("Insert failed: " . $e->getMessage());
+            die("PDO Error: " . $e->getMessage());
         }
     }
     // Insert a new room
@@ -341,23 +342,53 @@ class DBConnection
         return $stmt->execute([$token, $expires, $username]);
     }
 
-    public function updateTelegramChatId($token, $chatId) {
-        $stmt = $this->pdo->prepare("UPDATE users SET telegram_chat_id = ?, connect_token = NULL, 
-            token_expires_at = NULL WHERE connect_token = ? AND token_expires_at > NOW()");
-        return $stmt->execute([$chatId, $token]);
+    public function updateTelegramChatId($token, $encryptedChatId) {
+        $stmt = $this->pdo->prepare("UPDATE users SET telegram_chat_id = ?, connect_token = NULL, token_expires_at = NULL WHERE connect_token = ? AND token_expires_at > NOW()");
+        return $stmt->execute([$encryptedChatId, $token]);
     }
 
     public function getUserByConnectToken($token) {
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE connect_token = ? AND token_expires_at > NOW()");
-        $stmt->execute([$token]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+    $stmt = $this->pdo->prepare("SELECT id, username, email FROM users WHERE connect_token = ? AND (token_expires_at IS NULL OR token_expires_at > NOW())");
+    $stmt->execute([$token]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
 
     public function updateUserSecretKey($username, $secretKey) {
         $stmt = $this->pdo->prepare("UPDATE users SET secret_key = ? WHERE username = ?");
         return $stmt->execute([$secretKey, $username]);
     }
+    /**
+ * Get and decrypt the user's secret key.
+ */
+public function getUserSecretKey($username) {
+    $stmt = $this->pdo->prepare("SELECT secret_key FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    if (!$row || empty($row['secret_key'])) {
+        return null;
+    }
+
+    // Decrypt using utils.php function
+    return decryptData($row['secret_key']);
+}
+/**
+ * Example: fetch user info by username and automatically decrypt secret_key.
+ */
+public function selectUserByUsername($username) {
+    $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($row && !empty($row['secret_key'])) {
+        $row['secret_key'] = decryptData($row['secret_key']);
+    }
+    if ($row && !empty($row['telegram_chat_id'])) {
+        $row['telegram_chat_id'] = decryptData($row['telegram_chat_id']);
+    }
+
+    return $row;
+}
     public function updateLastLogin($username, $ip) {
         $stmt = $this->pdo->prepare("UPDATE users SET last_login_ip = ?, last_login_at = NOW() 
             WHERE username = ?");

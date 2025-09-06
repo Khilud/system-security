@@ -1,4 +1,5 @@
 <?php
+ob_start();
 header('Cache-Control: no-cache, must-revalidate');
 require_once 'DBUtils.php';
 require_once 'utils.php';
@@ -7,18 +8,31 @@ if (isset($_SESSION['username'])) {
     unset($_SESSION['username']);
 }
 
+$AES_MASTER_KEY = getenv('AES_MASTER_KEY');
+if (!$AES_MASTER_KEY) {
+    die("AES master key not set in environment.");
+}
+
+// set globally key for encrypt/decrypt functions
+$AES_MASTER_KEY = hex2bin(trim($AES_MASTER_KEY));
+if ($AES_MASTER_KEY === false || strlen($AES_MASTER_KEY) !== 32) {
+    die("Invalid AES master key format.");
+}
+$GLOBALS['AES_MASTER_KEY'] = $AES_MASTER_KEY;
+
 function checkValidPassword(string $username, string $password): bool {
     $connection = new DBConnection();
-    $result = $connection->selectUserByUsername($username);
+    $user = $connection->selectUserByUsername($username);
 
-    if (count($result) === 0) {
+    if (!$user || !isset($user["password"])) {
         // User not found
         return false;
-    } else {
-        // Verify the password using password_verify
-        $storedHash = $result[0]["password"]; // Retrieve the hashed password from the database
-        return password_verify($password, $storedHash);
     }
+    $storedHash = $user["password"];
+    if ($storedHash === null) {
+        return false;
+    }
+    return password_verify($password, $storedHash);
 }
 
 // rate limiting function
@@ -76,10 +90,13 @@ if (isset($_POST['loginButton'])) {
          $_SESSION['username'] = $username;
             // Check if user has linked Telegram
             $db = new DBConnection();
-            $userArr = $db->selectUserByUsername($username);
-            $user = $userArr[0] ?? null;
+            $user = $db->selectUserByUsername($username);
             
-            if (!$user['telegram_chat_id']) {
+            // Debug logging
+            error_log("User data: " . json_encode($user));
+            error_log("Telegram chat_id: " . ($user['telegram_chat_id'] ?? 'NULL'));
+
+            if (!$user || empty($user['telegram_chat_id'])) {
                 // Generate new connect token
                 $token = generateConnectToken();
                 $expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));

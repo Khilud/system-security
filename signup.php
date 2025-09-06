@@ -1,6 +1,6 @@
 <?php
 require_once 'DBUtils.php';
-require_once 'utils.php'; // for generateConnectToken()
+require_once 'utils.php'; 
 session_start();
 
 $errors = [];
@@ -36,8 +36,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $success = $db->insertUser($username, $email, $hashed_password);
                 if ($success) {
 
-                    $secretKey = generateSecretKey(); // function from utils.php
-                    $db->updateUserSecretKey($username, $secretKey);
+                    // Generate secret key and encrypt before saving
+                    $secretKey = generateSecretKey(); // plaintext key
+                    $encryptedSecretKey = encryptData($secretKey); // AES encrypt
+                    $db->updateUserSecretKey($username, $encryptedSecretKey);
+
                     // Generate connect token for Telegram linking
                     $token = generateConnectToken();
                     $expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));

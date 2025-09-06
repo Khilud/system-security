@@ -3,6 +3,17 @@ session_start();
 require_once 'DBUtils.php';
 require_once 'utils.php';
 
+// Set up AES master key for encryption/decryption
+$masterKey = getenv('AES_MASTER_KEY');
+if (!$masterKey) {
+    die("AES master key not set in environment.");
+}
+$masterKey = hex2bin(trim($masterKey));
+if ($masterKey === false || strlen($masterKey) !== 32) {
+    die("Invalid AES master key format.");
+}
+$GLOBALS['AES_MASTER_KEY'] = $masterKey;
+
 // Redirect if not logged in
 if (!isset($_SESSION['username'])) {
     header('Location: login.php');
@@ -11,38 +22,45 @@ if (!isset($_SESSION['username'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db = new DBConnection();
-    $userArr = $db->selectUserByUsername($_SESSION['username']);
-    $user = $userArr[0] ?? null;
+    $user = $db->selectUserByUsername($_SESSION['username']);
 
     if (!$user || isAccountLocked($user)) {
         $error = "❌ Account is locked. Please contact support.";
     } 
-    elseif (!isset($user['secret_key'])) {
+    elseif (empty($user['secret_key'])) {
         $error = "❌ Telegram not properly linked. Please set up MFA first.";
     }
     else {
+        // Use the secret key directly (already decrypted by selectUserByUsername)
         $secretKey = $user['secret_key'];
-        $enteredOtp = $_POST['otp'];
-        
+        $enteredOtp = trim($_POST['otp'] ?? '');
+
         if (verifyOTP($secretKey, $enteredOtp)) {
             // Reset failed attempts on success
-            $db->resetFailedAttempts($_SESSION['username']);
+            $resetResult = $db->resetFailedAttempts($_SESSION['username']);
+            error_log("Reset failed attempts result: " . ($resetResult ? 'success' : 'failed'));
             
             // Update last successful login
-            $db->updateLastLogin($_SESSION['username'], $_SERVER['REMOTE_ADDR']);
+            $loginUpdateResult = $db->updateLastLogin($_SESSION['username'], $_SERVER['REMOTE_ADDR']);
+            error_log("Update last login result: " . ($loginUpdateResult ? 'success' : 'failed'));
+            error_log("Username: " . $_SESSION['username'] . ", IP: " . $_SERVER['REMOTE_ADDR']);
             
+            // Set MFA session flag
             $_SESSION['mfa_verified'] = true;
             unset($_SESSION['otp_expiry']);
-            
+
+            // Optional: unset connect token if it's no longer needed
+            unset($_SESSION['connect_token']);
+
             header('Location: home.php');
             exit;
         } else {
             // Increment failed attempts
             $db->incrementFailedAttempts($_SESSION['username']);
             $failedAttempts = $db->getFailedAttempts($_SESSION['username']);
-            
+
             if ($failedAttempts >= 5) {
-                // Lock account for 10 minutes (changed from 30)
+                // Lock account for 10 minutes
                 $lockUntil = date('Y-m-d H:i:s', strtotime('+10 minutes'));
                 $db->lockAccount($_SESSION['username'], $lockUntil);
                 $error = "❌ Too many failed attempts. Account locked for 10 minutes.";
@@ -53,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

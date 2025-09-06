@@ -1,31 +1,30 @@
 <?php
-/**
- * utils.php
- * Secure utilities for Telegram MFA and OTP handling
- */
 
-/**
- * Generate a secure random token for Telegram linking
- */
+// Load AES master key from environment Docker secret
+$AES_MASTER_KEY = getenv('AES_MASTER_KEY');
+
+if (!$AES_MASTER_KEY) {
+    throw new Exception("AES master key not set in environment");
+}
+
+//  32 bytes (256-bit)
+$AES_MASTER_KEY = hex2bin(trim($AES_MASTER_KEY));
+if ($AES_MASTER_KEY === false || strlen($AES_MASTER_KEY) !== 32) {
+    throw new Exception("Invalid AES master key format. Must be 64 hex chars.");
+}
+// token
 function generateConnectToken(): string {
     return bin2hex(random_bytes(16)); // 32 hex chars
 }
 
-/**
- * Generate a secure secret key for OTP generation
- */
+// per-user secret key
 function generateSecretKey(): string {
     return bin2hex(random_bytes(32)); // 64 hex chars (256-bit)
 }
 
-/**
- * Generate a time-based OTP (TOTP) using the secret key
- * Compatible with Google Authenticator
- */
+// TOTP using the secret key
 function generateOTP(string $secretKey): string {
-    // Convert hex key to binary
     $key = hex2bin($secretKey);
-
     $timeSlice = floor(time() / 30); // 30-second window
     $timeData = pack('N*', 0) . pack('N*', $timeSlice); // 64-bit time
 
@@ -37,16 +36,13 @@ function generateOTP(string $secretKey): string {
     return str_pad((string)($otp % 1000000), 6, '0', STR_PAD_LEFT); // 6-digit OTP
 }
 
-/**
- * Verify if an OTP is valid (checks current and previous 30-second window)
- */
+
 function verifyOTP(string $secretKey, string $userOTP): bool {
-    // Current time slice
     if ($userOTP === generateOTP($secretKey)) {
         return true;
     }
 
-    // Previous time slice (30 seconds ago)
+    // Previous time slice
     $prevTime = time() - 30;
     $timeSlice = floor($prevTime / 30);
     $key = hex2bin($secretKey);
@@ -60,9 +56,7 @@ function verifyOTP(string $secretKey, string $userOTP): bool {
     return $userOTP === $prevOTP;
 }
 
-/**
- * Check if an account is locked due to too many failed attempts
- */
+// Check if an account is locked
 function isAccountLocked(array $user): bool {
     if (!isset($user['locked_until'])) {
         return false;
@@ -72,37 +66,30 @@ function isAccountLocked(array $user): bool {
     return $lockedUntil && $lockedUntil > time();
 }
 
-/**
- * Encrypt sensitive data before storing in DB
- */
-
-function encryptData(string $data, string $key): string {
+// Encrypt sensitive data 
+function encryptData(string $data): string {
+    global $AES_MASTER_KEY;
     $iv = random_bytes(16);
-    $encrypted = openssl_encrypt($data, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+    $encrypted = openssl_encrypt($data, 'AES-256-CBC', $AES_MASTER_KEY, OPENSSL_RAW_DATA, $iv);
     return base64_encode($iv . $encrypted);
 }
 
-/**
- * Decrypt sensitive data from DB
- */
-function decryptData(string $encryptedData, string $key): string {
+// Decrypt sensitive data from DB
+function decryptData(string $encryptedData): string {
+    global $AES_MASTER_KEY;
     $data = base64_decode($encryptedData);
     $iv = substr($data, 0, 16);
     $encrypted = substr($data, 16);
-    return openssl_decrypt($encrypted, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+    return openssl_decrypt($encrypted, 'AES-256-CBC', $AES_MASTER_KEY, OPENSSL_RAW_DATA, $iv);
 }
 
-/**
- * Format error messages for display
- */
+
+// Format error messages for display
 function formatError(string $message): string {
     return "❌ " . htmlspecialchars($message);
 }
 
-/**
- * Format success messages for display
- */
+// Format success messages
 function formatSuccess(string $message): string {
     return "✅ " . htmlspecialchars($message);
 }
-?>
